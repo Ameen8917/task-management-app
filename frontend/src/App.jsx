@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
+import Users from './pages/Users';
 
 function App() {
   return (
@@ -26,6 +27,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Tasks />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/users" 
+            element={
+              <PrivateRoute>
+                <Users />
               </PrivateRoute>
             } 
           />

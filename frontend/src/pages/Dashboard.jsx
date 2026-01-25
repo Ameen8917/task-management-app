@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { ListTodo, LayoutDashboard, CheckSquare, LogOut, Crown, Calendar, TrendingUp, User } from 'lucide-react';
+import { ListTodo, LayoutDashboard, CheckSquare, LogOut, Crown, Calendar, TrendingUp, Shield, User } from 'lucide-react';
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -13,8 +13,7 @@ function Dashboard() {
     completionRate: 33
   });
 
-   // Check if user is admin
-  const isAdmin = user?.email?.includes('admin') || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const handleLogout = () => {
     logout();
@@ -54,11 +53,9 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo and Nav Links */}
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
@@ -78,10 +75,18 @@ function Dashboard() {
                   <CheckSquare className="w-4 h-4" />
                   Tasks
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => navigate('/users')}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Users
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* User Menu */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
                 {isAdmin ? (
@@ -91,9 +96,8 @@ function Dashboard() {
                 )}
                 <div className="text-left">
                   <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{isAdmin ? "Admin" : "User"}</p>
+                  <p className="text-xs text-gray-500">{isAdmin ? 'Admin' : 'User'}</p>
                 </div>
-                
               </div>
               <button
                 onClick={handleLogout}
@@ -107,28 +111,20 @@ function Dashboard() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
-            {isAdmin ? (
+            {isAdmin && (
               <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded flex items-center gap-1">
                 <Crown className="w-3 h-3" />
                 Admin
-              </span>
-            ) : (
-              <span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded flex items-center gap-1">
-                <User className="w-3 h-3" />
-                User
               </span>
             )}
           </div>
           <p className="text-gray-600">Here's an overview of your tasks</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
@@ -171,9 +167,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Upcoming Tasks */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">Upcoming Tasks</h2>
@@ -201,7 +195,6 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Quick Stats Sidebar */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h3 className="font-bold text-gray-900 mb-4">Quick Stats</h3>
@@ -234,14 +227,12 @@ function Dashboard() {
                 )}
               </div>
 
-              {isAdmin && (
-                <button
-                  onClick={() => navigate('/tasks')}
-                  className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-                >
-                  Manage Tasks
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/tasks')}
+                className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+              >
+                Manage Tasks
+              </button>
             </div>
           </div>
         </div>
