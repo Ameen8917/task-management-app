@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { ListTodo, LayoutDashboard, CheckSquare, LogOut, Crown, Calendar, TrendingUp } from 'lucide-react';
+import { ListTodo, LayoutDashboard, CheckSquare, LogOut, Crown, Calendar, TrendingUp, User } from 'lucide-react';
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -12,6 +12,9 @@ function Dashboard() {
     completedTasks: 2,
     completionRate: 33
   });
+
+   // Check if user is admin
+  const isAdmin = user?.email?.includes('admin') || user?.role === 'admin';
 
   const handleLogout = () => {
     logout();
@@ -81,11 +84,16 @@ function Dashboard() {
             {/* User Menu */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                <Crown className="w-5 h-5 text-yellow-500" />
+                {isAdmin ? (
+                  <Crown className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <User className="w-5 h-5 text-gray-500" />
+                )}
                 <div className="text-left">
                   <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-500">Admin</p>
+                  <p className="text-xs text-gray-500">{isAdmin ? "Admin" : "User"}</p>
                 </div>
+                
               </div>
               <button
                 onClick={handleLogout}
@@ -105,10 +113,17 @@ function Dashboard() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
-            <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded flex items-center gap-1">
-              <Crown className="w-3 h-3" />
-              Admin
-            </span>
+            {isAdmin ? (
+              <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded flex items-center gap-1">
+                <Crown className="w-3 h-3" />
+                Admin
+              </span>
+            ) : (
+              <span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded flex items-center gap-1">
+                <User className="w-3 h-3" />
+                User
+              </span>
+            )}
           </div>
           <p className="text-gray-600">Here's an overview of your tasks</p>
         </div>
@@ -208,21 +223,25 @@ function Dashboard() {
                   <p className="text-xs text-gray-600">Tasks in progress</p>
                 </div>
 
-                <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Crown className="w-4 h-4 text-yellow-600" />
-                    <span className="text-sm font-medium text-yellow-900">Admin View</span>
+                {isAdmin && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="w-4 h-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-900">Admin View</span>
+                    </div>
+                    <p className="text-xs text-yellow-700">You're viewing all tasks in the system</p>
                   </div>
-                  <p className="text-xs text-yellow-700">You're viewing all tasks in the system</p>
-                </div>
+                )}
               </div>
 
-              <button
-                onClick={() => navigate('/tasks')}
-                className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-              >
-                Manage Tasks
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => navigate('/tasks')}
+                  className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+                >
+                  Manage Tasks
+                </button>
+              )}
             </div>
           </div>
         </div>
