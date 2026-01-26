@@ -36,7 +36,6 @@ function TaskCard({ task, isAdmin, onEdit, onDelete }) {
 
   const statusBadge = getStatusBadge(task.status);
   const priorityBadge = getPriorityBadge(task.priority);
-  
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   return (
@@ -44,16 +43,10 @@ function TaskCard({ task, isAdmin, onEdit, onDelete }) {
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-semibold text-gray-900 text-lg flex-1">{task.title}</h3>
         <div className="flex gap-2 ml-2">
-          <button 
-            onClick={onEdit}
-            className="p-1.5 text-gray-400 hover:text-blue-600 transition"
-          >
+          <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-blue-600 transition">
             <Edit2 className="w-4 h-4" />
           </button>
-          <button 
-            onClick={onDelete}
-            className="p-1.5 text-gray-400 hover:text-red-600 transition"
-          >
+          <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-600 transition">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -104,4 +97,4 @@ function TaskCard({ task, isAdmin, onEdit, onDelete }) {
 }
 
 
-export default TaskCard;
+export default TaskCard

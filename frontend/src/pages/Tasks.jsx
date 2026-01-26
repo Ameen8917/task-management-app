@@ -17,9 +17,14 @@ import {
   User,
   Shield,
   AlertCircle,
-  Clock
+  Clock,
+  Grid3x3,
+  LayoutGrid,
+  Eye,
+  CheckCircle2
 } from 'lucide-react';
 import TaskCard from '../components/TaskCard';
+import KanbanBoard from '../components/KanbanBoard';
 import TaskModal from '../components/TaskModal';
 
 function Tasks() {
@@ -32,6 +37,7 @@ function Tasks() {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'kanban'
 
   const isAdmin = user?.role === 'admin';
 
@@ -83,6 +89,15 @@ function Tasks() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      await API.put(`/tasks/${taskId}`, { status: newStatus });
+      fetchTasks();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update task status');
+    }
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -171,13 +186,41 @@ function Tasks() {
                 {isAdmin ? 'Manage all tasks in the system' : 'Create and manage your tasks'}
               </p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              New Task
-            </button>
+            <div className="flex items-center gap-3">
+              {/* View Toggle */}
+              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md transition ${
+                    viewMode === 'grid'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('kanban')}
+                  className={`p-2 rounded-md transition ${
+                    viewMode === 'kanban'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Kanban View"
+                >
+                  <Grid3x3 className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                <Plus className="w-5 h-5" />
+                New Task
+              </button>
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -192,49 +235,51 @@ function Tasks() {
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-400" />
-              <button
-                onClick={() => setActiveFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  activeFilter === 'all'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setActiveFilter('todo')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  activeFilter === 'todo'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                To Do
-              </button>
-              <button
-                onClick={() => setActiveFilter('in-progress')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  activeFilter === 'in-progress'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                In Progress
-              </button>
-              <button
-                onClick={() => setActiveFilter('completed')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  activeFilter === 'completed'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Completed
-              </button>
-            </div>
+            {viewMode === 'grid' && (
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-400" />
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${
+                    activeFilter === 'all'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setActiveFilter('todo')}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${
+                    activeFilter === 'todo'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  To Do
+                </button>
+                <button
+                  onClick={() => setActiveFilter('in-progress')}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${
+                    activeFilter === 'in-progress'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  In Progress
+                </button>
+                <button
+                  onClick={() => setActiveFilter('completed')}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${
+                    activeFilter === 'completed'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Completed
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -254,23 +299,33 @@ function Tasks() {
           </div>
         ) : (
           <>
-            {/* Task Count */}
-            <p className="text-sm text-gray-600 mb-4">
-              Showing <span className="font-medium">{filteredTasks.length}</span> task{filteredTasks.length !== 1 ? 's' : ''}
-            </p>
-
-            {/* Tasks Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTasks.map((task) => (
-                <TaskCard 
-                  key={task._id} 
-                  task={task} 
-                  isAdmin={isAdmin}
-                  onEdit={() => handleEditTask(task)}
-                  onDelete={() => handleDeleteTask(task._id)}
-                />
-              ))}
-            </div>
+            {/* Conditional View Rendering */}
+            {viewMode === 'grid' ? (
+              <>
+                <p className="text-sm text-gray-600 mb-4">
+                  Showing <span className="font-medium">{filteredTasks.length}</span> task{filteredTasks.length !== 1 ? 's' : ''}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredTasks.map((task) => (
+                    <TaskCard 
+                      key={task._id} 
+                      task={task} 
+                      isAdmin={isAdmin}
+                      onEdit={() => handleEditTask(task)}
+                      onDelete={() => handleDeleteTask(task._id)}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <KanbanBoard 
+                tasks={filteredTasks}
+                isAdmin={isAdmin}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+              />
+            )}
 
             {/* Empty State */}
             {filteredTasks.length === 0 && (
@@ -299,5 +354,4 @@ function Tasks() {
     </div>
   );
 }
-
 export default Tasks;
