@@ -92,11 +92,21 @@ function Tasks() {
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
+    // Optimistic update - update UI immediately
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task._id === taskId 
+          ? { ...task, status: newStatus }
+          : task
+      )
+    );
+
     try {
       await API.put(`/tasks/${taskId}`, { status: newStatus });
-      fetchTasks();
     } catch (err) {
+      // If error, revert the change
       alert(err.response?.data?.message || 'Failed to update task status');
+      fetchTasks(); // Refresh to get correct state
     }
   };
 

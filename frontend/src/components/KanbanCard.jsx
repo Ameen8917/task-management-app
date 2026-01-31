@@ -1,33 +1,56 @@
 import { Calendar, Edit2, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-function KanbanCard({ task, isAdmin, onEdit, onDelete, onStatusChange, columns }) {
+function KanbanCard({
+  task,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  columns,
+  onDragStart,
+  onDragEnd,
+  isDragging,
+}) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const getPriorityBadge = (priority) => {
     const badges = {
-      'low': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Low' },
-      'medium': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Medium' },
-      'high': { bg: 'bg-red-100', text: 'text-red-700', label: 'High' }
+      low: { bg: "bg-gray-100", text: "text-gray-700", label: "Low" },
+      medium: { bg: "bg-yellow-100", text: "text-yellow-700", label: "Medium" },
+      high: { bg: "bg-red-100", text: "text-red-700", label: "High" },
     };
     return badges[priority] || badges.medium;
   };
 
   const priorityBadge = getPriorityBadge(task.priority);
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+  const isOverdue =
+    task.dueDate &&
+    new Date(task.dueDate) < new Date() &&
+    task.status !== "completed";
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition group">
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, task)}
+      onDragEnd={onDragEnd}
+      className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md group cursor-move
+        transition-all duration-200 ease-in-out
+        ${isDragging ? "opacity-40 scale-95 rotate-2 shadow-2xl" : "opacity-100 scale-100"}
+      `}
+    >
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-semibold text-gray-900 flex-1 pr-2">{task.title}</h4>
+        <h4 className="font-semibold text-gray-900 flex-1 pr-2">
+          {task.title}
+        </h4>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-          <button 
+          <button
             onClick={onEdit}
             className="p-1 text-gray-400 hover:text-blue-600 transition"
           >
             <Edit2 className="w-4 h-4" />
           </button>
-          <button 
+          <button
             onClick={onDelete}
             className="p-1 text-gray-400 hover:text-red-600 transition"
           >
@@ -37,11 +60,15 @@ function KanbanCard({ task, isAdmin, onEdit, onDelete, onStatusChange, columns }
       </div>
 
       {task.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{task.description}</p>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {task.description}
+        </p>
       )}
 
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className={`px-2 py-1 ${priorityBadge.bg} ${priorityBadge.text} rounded text-xs font-medium`}>
+        <span
+          className={`px-2 py-1 ${priorityBadge.bg} ${priorityBadge.text} rounded text-xs font-medium`}
+        >
           {priorityBadge.label}
         </span>
         {isOverdue && (
@@ -58,27 +85,36 @@ function KanbanCard({ task, isAdmin, onEdit, onDelete, onStatusChange, columns }
         </div>
       )}
 
-      {/* Status Change Dropdown */}
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
           className="w-full px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-xs font-medium transition flex items-center justify-between"
         >
           <span>Move to...</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
         {showDropdown && (
           <>
-            <div 
-              className="fixed inset-0 z-10" 
+            <div
+              className="fixed inset-0 z-10"
               onClick={() => setShowDropdown(false)}
             ></div>
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden">
               {columns
-                .filter(col => col.id !== task.status)
+                .filter((col) => col.id !== task.status)
                 .map((col) => (
                   <button
                     key={col.id}
