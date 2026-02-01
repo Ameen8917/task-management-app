@@ -2,25 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ListTodo, LayoutDashboard, CheckSquare, LogOut, Crown, Calendar, TrendingUp, Shield, User } from 'lucide-react';
+import API from '../api/axios';
 
-function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalTasks: 6,
-    todoTasks: 4,
-    completedTasks: 2,
-    completionRate: 33
-  });
-
-  const isAdmin = user?.role === 'admin';
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const upcomingTasks = [
+const upcomingTasksData = [
     {
       id: 1,
       title: 'Sample User Task',
@@ -49,7 +33,74 @@ function Dashboard() {
       dueDate: 'Feb 1',
       status: 'todo'
     }
-  ];
+];
+
+const formatDueDate = (dateString) => {
+  const date = new Date(dateString);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  today.setHours(0, 0, 0, 0);
+  tomorrow.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  
+  if (date.getTime() === today.getTime()) {
+    return 'Today';
+  } else if (date.getTime() === tomorrow.getTime()) {
+    return 'Tomorrow';
+  } else {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+};
+
+function Dashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalTasks: 0,
+    todoTasks: 0,
+    inProgressTasks: 0,
+    completedTasks: 0,
+    completionRate: 0,
+    overdueTasks: 0
+  });
+  const [upcomingTasks, setUpcomingTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch stats
+      const statsResponse = await API.get('/tasks/stats');
+      setStats(statsResponse.data.stats);
+
+      // Fetch upcoming tasks
+      const tasksResponse = await API.get('/tasks?sortBy=dueDate&order=asc');
+      console.log("tasksResponse : ", tasksResponse);
+      const upcoming = tasksResponse.data.tasks
+        .filter(task => task.status !== 'completed')
+        .slice(0, 4);
+      console.log("tasksResponse upcoming: ", upcoming);
+      setUpcomingTasks(upcoming);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -61,7 +112,9 @@ function Dashboard() {
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                   <ListTodo className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold text-gray-900">TaskFlow</span>
+                <span className="text-xl font-bold text-gray-900">
+                  TaskFlow
+                </span>
               </div>
               <div className="hidden md:flex items-center gap-1">
                 <button className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 rounded-lg font-medium">
@@ -69,7 +122,7 @@ function Dashboard() {
                   Dashboard
                 </button>
                 <button
-                  onClick={() => navigate('/tasks')}
+                  onClick={() => navigate("/tasks")}
                   className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
                 >
                   <CheckSquare className="w-4 h-4" />
@@ -77,7 +130,7 @@ function Dashboard() {
                 </button>
                 {isAdmin && (
                   <button
-                    onClick={() => navigate('/users')}
+                    onClick={() => navigate("/users")}
                     className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
                   >
                     <Shield className="w-4 h-4" />
@@ -95,8 +148,12 @@ function Dashboard() {
                   <User className="w-5 h-5 text-gray-500" />
                 )}
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{isAdmin ? 'Admin' : 'User'}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {isAdmin ? "Admin" : "User"}
+                  </p>
                 </div>
               </div>
               <button
@@ -111,132 +168,180 @@ function Dashboard() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
-            {isAdmin && (
-              <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded flex items-center gap-1">
-                <Crown className="w-3 h-3" />
-                Admin
-              </span>
-            )}
-          </div>
-          <p className="text-gray-600">Here's an overview of your tasks</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-600">Total Tasks</span>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <ListTodo className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalTasks}</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-600">To Do</span>
-              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-orange-500 rounded-full"></div>
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.todoTasks}</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-600">Completed</span>
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                <CheckSquare className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.completedTasks}</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-600">Completion Rate</span>
-              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.completionRate}</p>
+      {loading ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading dashboard...</p>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Upcoming Tasks</h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                View all
-              </button>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {user?.name}!
+              </h1>
+              {isAdmin && (
+                <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  Admin
+                </span>
+              )}
             </div>
+            <p className="text-gray-600">Here's an overview of your tasks</p>
+          </div>
 
-            <div className="space-y-4">
-              {upcomingTasks.map((task) => (
-                <div key={task.id} className="flex items-start gap-3 p-4 hover:bg-gray-50 rounded-lg transition">
-                  <div className="mt-1">
-                    <div className="w-5 h-5 border-2 border-orange-500 rounded-full"></div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 mb-1">{task.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-500 shrink-0">
-                    <Calendar className="w-4 h-4" />
-                    <span>{task.dueDate}</span>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-gray-600">
+                  Total Tasks
+                </span>
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <ListTodo className="w-5 h-5 text-blue-600" />
                 </div>
-              ))}
+              </div>
+              <p className="text-3xl font-bold text-gray-900">
+                {stats.totalTasks}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-gray-600">To Do</span>
+                <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-orange-500 rounded-full"></div>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900">
+                {stats.todoTasks}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-gray-600">
+                  Completed
+                </span>
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                  <CheckSquare className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900">
+                {stats.completedTasks}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-gray-600">
+                  Completion Rate
+                </span>
+                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-gray-900">
+                {stats.completionRate}%
+              </p>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Quick Stats</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Upcoming Tasks
+                </h2>
+                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  View all
+                </button>
+              </div>
 
               <div className="space-y-4">
-                <div className="p-4 bg-red-50 border border-red-100 rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-red-900">Overdue Tasks</span>
-                    <span className="text-2xl font-bold text-red-600">1</span>
-                  </div>
-                  <p className="text-xs text-red-700">Requires immediate attention</p>
-                </div>
-
-                <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900">Active Tasks</span>
-                    <span className="text-2xl font-bold text-gray-900">4</span>
-                  </div>
-                  <p className="text-xs text-gray-600">Tasks in progress</p>
-                </div>
-
-                {isAdmin && (
-                  <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Crown className="w-4 h-4 text-yellow-600" />
-                      <span className="text-sm font-medium text-yellow-900">Admin View</span>
+                {upcomingTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-3 p-4 hover:bg-gray-50 rounded-lg transition"
+                  >
+                    <div className="mt-1">
+                      <div className="w-5 h-5 border-2 border-orange-500 rounded-full"></div>
                     </div>
-                    <p className="text-xs text-yellow-700">You're viewing all tasks in the system</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 mb-1">
+                        {task.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {task.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-gray-500 shrink-0">
+                      <Calendar className="w-4 h-4" />
+                      <span>{formatDueDate(task.dueDate)}</span>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
+            </div>
 
-              <button
-                onClick={() => navigate('/tasks')}
-                className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-              >
-                Manage Tasks
-              </button>
+            <div className="space-y-6">
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="font-bold text-gray-900 mb-4">Quick Stats</h3>
+
+                <div className="space-y-4">
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-red-900">
+                        Overdue Tasks
+                      </span>
+                      <span className="text-2xl font-bold text-red-600">
+                        {stats.overdueTasks}
+                      </span>
+                    </div>
+                    <p className="text-xs text-red-700">
+                      Requires immediate attention
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        Active Tasks
+                      </span>
+                      <span className="text-2xl font-bold text-gray-900">
+                        {stats.inProgressTasks}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600">Tasks in progress</p>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Crown className="w-4 h-4 text-yellow-600" />
+                        <span className="text-sm font-medium text-yellow-900">
+                          Admin View
+                        </span>
+                      </div>
+                      <p className="text-xs text-yellow-700">
+                        You're viewing all tasks in the system
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => navigate("/tasks")}
+                  className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+                >
+                  Manage Tasks
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
